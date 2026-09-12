@@ -1,12 +1,12 @@
 {
-    "name": "praktikum",
-    "short_name": "praktikum",
+    "name": "Naufal Arya Maulana — Portfolio",
+    "short_name": "Arya",
     "start_url": ".",
     "display": "standalone",
-    "background_color": "#0175C2",
-    "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
-    "orientation": "portrait-primary",
+    "background_color": "#F8FAFC",
+    "theme_color": "#F8FAFC",
+    "description": "Turning curiosity into things that work. Web, IoT, and game projects by Naufal Arya Maulana.",
+    "orientation": "any",
     "prefer_related_applications": false,
     "icons": [
         {

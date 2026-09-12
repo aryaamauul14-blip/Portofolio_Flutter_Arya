@@ -1,123 +1,109 @@
 import 'package:flutter/material.dart';
-import 'package:praktikum/new_form.dart';
 
-class PortfolioItem {
-  const PortfolioItem({
-    required this.title,
-    required this.description,
-    required this.tech,
-    required this.icon,
-  });
-
-  final String title;
-  final String description;
-  final String tech;
-  final IconData icon;
-}
+import 'new_form.dart';
+import 'portfolio_data.dart';
+import 'portfolio_intro.dart';
+import 'portfolio_theme.dart';
+import 'portfolio_widgets.dart';
+import 'project_art.dart';
 
 class ProfilPage extends StatefulWidget {
   const ProfilPage({super.key});
 
   @override
-  State<ProfilPage> createState() => _ProfilPage();
+  State<ProfilPage> createState() => _ProfilPageState();
 }
 
-class _ProfilPage extends State<ProfilPage> {
-  static const Color _primary = Color(0xFF5AA9FF);
-  static const Color _primaryDark = Color(0xFF2D7FE8);
-  static const Color _surface = Color(0xFFF8FBFF);
-  static const Color _textPrimary = Color(0xFF17324D);
-  static const Color _textMuted = Color(0xFF6B86A5);
+class _ProfilPageState extends State<ProfilPage> {
+  final _scrollController = ScrollController();
+  final _aboutKey = GlobalKey();
+  final _workKey = GlobalKey();
+  final _contactKey = GlobalKey();
+  String _activeSection = '';
+  ProjectKind? _filter;
 
-  final String _name = 'Naufal Arya Maulana';
-  final String _role = 'Mahasiswa Teknik Informatika';
-  final String _address = 'Jakarta, Indonesia';
-  final String _major = 'Teknik Informatika 2023';
-  final String _avatarAsset = 'assets/Foto Profil Naufal Arya.jpeg';
+  @override
+  void initState() {
+    super.initState();
+    _scrollController.addListener(_trackSection);
+  }
 
-  final List<String> _skills = const [
-    'C for IoT',
-    'NextJS',
-    'TailwindCSS',
-    'Python',
-    'Figma',
-  ];
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
 
-  final List<PortfolioItem> _portfolioItems = const [
-    PortfolioItem(
-      title: 'ZeroSampah',
-      description:
-          'Community-based waste management system integrated with Gemini AI to help communities sort, monitor, and improve waste handling.',
-      tech: 'NextJS, TailwindCSS, Typescript, Clerk, Supabase',
-      icon: Icons.recycling_outlined,
-    ),
-    PortfolioItem(
-      title: 'IoT For Flood Warning System',
-      description:
-          'A canal level monitoring system that detects rising water levels and sends messages to users before flooding happens.',
-      tech: 'Arduino IDE, Grafana, InfluxDB, HiveMQTT',
-      icon: Icons.water_outlined,
-    ),
-    PortfolioItem(
-      title: 'Infinite Running Game',
-      description:
-          'A Subway Surfers inspired Unity game set in a city destroyed by dragons where players collect points and avoid obstacles.',
-      tech: 'Unity, C language',
-      icon: Icons.videogame_asset_outlined,
-    ),
-  ];
+  void _trackSection() {
+    var active = '';
+    for (final entry in [
+      (_workKey, 'Porto'),
+      (_aboutKey, 'About Me'),
+      (_contactKey, 'Contact'),
+    ]) {
+      final box = entry.$1.currentContext?.findRenderObject();
+      if (box is RenderBox && box.localToGlobal(Offset.zero).dy < 230) {
+        active = entry.$2;
+      }
+    }
+    if (active != _activeSection) setState(() => _activeSection = active);
+  }
 
-  int _activePage = 0;
+  void _goTo(GlobalKey key) {
+    final target = key.currentContext;
+    if (target == null) return;
+    Scrollable.ensureVisible(
+      target,
+      duration: motionDuration(context, 650),
+      curve: Curves.easeInOutCubic,
+    );
+  }
+
+  void _goHome() {
+    if (MediaQuery.disableAnimationsOf(context)) {
+      _scrollController.jumpTo(0);
+      return;
+    }
+    _scrollController.animateTo(
+      0,
+      duration: motionDuration(context, 650),
+      curve: Curves.easeInOutCubic,
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
-    final screenHeight = MediaQuery.of(context).size.height;
-    final screenWidth = MediaQuery.of(context).size.width;
-
+    final compact =
+        MediaQuery.sizeOf(context).width < 900 ||
+        MediaQuery.textScalerOf(context).scale(14) > 18;
     return Scaffold(
-      backgroundColor: _surface,
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => NewForm(
-                title: _portfolioItems.first.title,
-                description: _portfolioItems.first.description,
-                tech: _portfolioItems.first.tech,
-                icon: _portfolioItems.first.icon,
-              ),
-            ),
-          );
-        },
-        backgroundColor: _primaryDark,
-        icon: const Icon(Icons.open_in_new, color: Colors.white),
-        label: const Text(
-          'Detail',
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-        ),
-      ),
-      body: SingleChildScrollView(
-        child: Stack(
+      body: SafeArea(
+        child: Column(
           children: [
-            Column(
-              children: [
-                _buildHeader(screenHeight, screenWidth),
-                const SizedBox(height: 60),
-                AnimatedSwitcher(
-                  duration: const Duration(milliseconds: 300),
-                  child: _activePage == 0
-                      ? _aboutPage()
-                      : (_activePage == 1 ? _portoPage() : _contactPage()),
+            _navigation(compact),
+            Expanded(
+              child: SelectionArea(
+                child: SingleChildScrollView(
+                  controller: _scrollController,
+                  child: Column(
+                    children: [
+                      ContentWidth(
+                        child: Entrance(
+                          child: PortfolioIntro(
+                            onWork: () => _goTo(_workKey),
+                            onContact: () => _goTo(_contactKey),
+                          ),
+                        ),
+                      ),
+                      const ToolStrip(),
+                      ContentWidth(child: _work()),
+                      ContentWidth(child: _about()),
+                      ContentWidth(child: _contact()),
+                      ContentWidth(child: _footer()),
+                    ],
+                  ),
                 ),
-                const SizedBox(height: 80),
-              ],
-            ),
-            Positioned(
-              top: screenHeight * 0.29,
-              left: 16,
-              right: 16,
-              child: _buildTabBar(),
+              ),
             ),
           ],
         ),
@@ -125,388 +111,527 @@ class _ProfilPage extends State<ProfilPage> {
     );
   }
 
-  Widget _buildHeader(double screenHeight, double screenWidth) {
+  Widget _navigation(bool compact) {
+    final links = Wrap(
+      alignment: WrapAlignment.center,
+      crossAxisAlignment: WrapCrossAlignment.center,
+      children: [
+        _navLink('About Me', _aboutKey),
+        SizedBox(width: compact ? 0 : 12),
+        _navLink('Porto', _workKey),
+        SizedBox(width: compact ? 0 : 12),
+        _navLink('Contact', _contactKey),
+      ],
+    );
     return Container(
-      height: screenHeight * 0.33,
-      width: screenWidth,
       decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          colors: [_primary, _primaryDark],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.only(
-          bottomLeft: Radius.circular(32),
-          bottomRight: Radius.circular(32),
+        color: Palette.paper,
+        border: Border(bottom: BorderSide(color: Palette.line)),
+      ),
+      child: ContentWidth(
+        child: Column(
+          children: [
+            SizedBox(
+              height: compact ? 66 : 86,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Brand(onTap: _goHome),
+                  if (!compact) links,
+                  if (compact)
+                    IconButton(
+                      onPressed: () => _goTo(_contactKey),
+                      tooltip: "Let's talk",
+                      icon: const Icon(Icons.north_east),
+                    )
+                  else
+                    TextButton.icon(
+                      onPressed: () => _goTo(_contactKey),
+                      label: const Text("Let's talk"),
+                      icon: const Icon(Icons.north_east, size: 16),
+                      iconAlignment: IconAlignment.end,
+                      style: TextButton.styleFrom(
+                        foregroundColor: Palette.blue,
+                      ),
+                    ),
+                ],
+              ),
+            ),
+            if (compact)
+              Padding(padding: const EdgeInsets.only(bottom: 8), child: links),
+          ],
         ),
       ),
+    );
+  }
+
+  Widget _navLink(String label, GlobalKey key) => TextButton(
+    onPressed: () => _goTo(key),
+    style: TextButton.styleFrom(
+      backgroundColor: _activeSection == label ? Palette.sky : null,
+      foregroundColor: _activeSection == label ? Palette.blue : Palette.muted,
+      padding: const EdgeInsets.symmetric(horizontal: 17),
+    ),
+    child: Text(label),
+  );
+
+  Widget _work() {
+    final projects =
+        portfolioItems
+            .where((project) => _filter == null || project.kind == _filter)
+            .toList();
+    return Padding(
+      key: _workKey,
+      padding: const EdgeInsets.only(top: 78, bottom: 40),
       child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          CircleAvatar(
-            radius: 52,
-            backgroundColor: Colors.white,
-            backgroundImage: AssetImage(_avatarAsset),
+          const Eyebrow('Ideas, brought to life'),
+          const SizedBox(height: 13),
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final heading = Text(
+                'Selected work',
+                style: PortfolioTheme.display(
+                  constraints.maxWidth < 600 ? 34 : 40,
+                ),
+              );
+              final filters = Wrap(
+                spacing: 6,
+                runSpacing: 8,
+                children: [
+                  _filterChip('All work', null),
+                  _filterChip('Web', ProjectKind.web),
+                  _filterChip('IoT', ProjectKind.iot),
+                  _filterChip('Game', ProjectKind.game),
+                ],
+              );
+              if (constraints.maxWidth < 720) {
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [heading, const SizedBox(height: 24), filters],
+                );
+              }
+              return Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [heading, filters],
+              );
+            },
           ),
           const SizedBox(height: 12),
-          Text(
-            _name,
-            style: const TextStyle(
-              fontSize: 22,
-              fontWeight: FontWeight.bold,
-              color: Colors.white,
-              letterSpacing: 0.5,
-            ),
+          const Text(
+            'Different mediums. The same drive to make something useful.',
           ),
-          const SizedBox(height: 4),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
-            decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.22),
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: Text(
-              _role,
-              style: const TextStyle(fontSize: 13, color: Colors.white),
-            ),
+          const SizedBox(height: 30),
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final columns =
+                  constraints.maxWidth >= 850
+                      ? 3
+                      : (constraints.maxWidth >= 560 ? 2 : 1);
+              final width =
+                  (constraints.maxWidth - (columns - 1) * 22) / columns;
+              final cards = Align(
+                alignment: Alignment.topLeft,
+                child: Wrap(
+                  spacing: 22,
+                  runSpacing: 24,
+                  children: [
+                    for (final project in projects)
+                      SizedBox(
+                        width: width,
+                        child: _ProjectCard(
+                          key: ValueKey(project.kind),
+                          project: project,
+                          onTap:
+                              () => Navigator.of(context).push(
+                                MaterialPageRoute<void>(
+                                  builder:
+                                      (context) => NewForm(project: project),
+                                ),
+                              ),
+                        ),
+                      ),
+                  ],
+                ),
+              );
+              if (MediaQuery.disableAnimationsOf(context)) return cards;
+              return AnimatedSize(
+                duration: motionDuration(context, 300),
+                alignment: Alignment.topLeft,
+                child: cards,
+              );
+            },
           ),
         ],
       ),
     );
   }
 
-  Widget _buildTabBar() {
-    return Container(
-      padding: const EdgeInsets.all(6),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.blue.withValues(alpha: 0.08),
-            blurRadius: 16,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          Expanded(child: _tabButton('About Me', 0, Icons.person_outline)),
-          Expanded(child: _tabButton('Porto', 1, Icons.work_outline)),
-          Expanded(child: _tabButton('Contact', 2, Icons.mail_outline)),
-        ],
-      ),
-    );
-  }
+  Widget _filterChip(String label, ProjectKind? kind) => ChoiceChip(
+    label: Text(label),
+    selected: _filter == kind,
+    showCheckmark: false,
+    onSelected: (_) => setState(() => _filter = kind),
+    selectedColor: Palette.ink,
+    backgroundColor: Palette.paper,
+    side: BorderSide(color: _filter == kind ? Palette.ink : Palette.line),
+    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(9)),
+    padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 8),
+    labelStyle: TextStyle(
+      fontSize: 12,
+      fontWeight: FontWeight.w600,
+      color: _filter == kind ? Palette.white : Palette.muted,
+    ),
+  );
 
-  Widget _tabButton(String label, int index, IconData icon) {
-    final bool isActive = _activePage == index;
-
-    return GestureDetector(
-      onTap: () {
-        setState(() {
-          _activePage = index;
-        });
-      },
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 250),
-        padding: const EdgeInsets.symmetric(vertical: 10),
-        decoration: BoxDecoration(
-          color: isActive ? _primaryDark : Colors.transparent,
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
+  Widget _about() => Padding(
+    key: _aboutKey,
+    padding: const EdgeInsets.only(top: 60, bottom: 86),
+    child: LayoutBuilder(
+      builder: (context, constraints) {
+        final story = Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Icon(
-              icon,
-              size: 18,
-              color: isActive ? Colors.white : Colors.grey,
-            ),
-            const SizedBox(height: 2),
+            const Eyebrow('The person behind the projects'),
+            const SizedBox(height: 16),
             Text(
-              label,
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-                color: isActive ? Colors.white : Colors.grey,
+              'A curious mind.\nA builder at heart.',
+              style: PortfolioTheme.display(
+                constraints.maxWidth < 600 ? 34 : 40,
               ),
+            ),
+            const SizedBox(height: 24),
+            const Text(
+              "I'm Naufal Arya Maulana, an informatics student at Universitas "
+              "Paramadina. I like turning a “what if?” into something I can actually build.",
+            ),
+            const SizedBox(height: 16),
+            const Text(
+              'From community-focused web apps to connected devices and games, '
+              'my projects are how I explore, experiment, and learn. '
+              'Away from the screen, you can find me swimming or '
+              'getting lost in a good math problem.',
+            ),
+            const SizedBox(height: 28),
+            const Eyebrow('My everyday toolkit'),
+            const SizedBox(height: 14),
+            Wrap(
+              spacing: 8,
+              runSpacing: 10,
+              children: [for (final skill in Profile.skills) Tag(skill)],
             ),
           ],
-        ),
-      ),
-    );
-  }
-
-  Widget _aboutPage() {
-    return Container(
-      key: const ValueKey('about'),
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _sectionTitle('Tentang Saya'),
-          Card(
-            elevation: 0,
-            color: Colors.white,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                children: [
-                  _infoRow(Icons.person, 'Nama', _name),
-                  const Divider(height: 20),
-                  _infoRow(Icons.location_on, 'Alamat', _address),
-                  const Divider(height: 20),
-                  _infoRow(Icons.school, 'Jurusan', _major),
-                  const Divider(height: 20),
-                  _infoRow(Icons.badge_outlined, 'Role', _role),
-                ],
-              ),
-            ),
-          ),
-          const SizedBox(height: 16),
-          _sectionTitle('Fakta Singkat'),
-          Card(
-            elevation: 0,
-            color: Colors.white,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                children: const [
-                  _CompactFact(label: 'NIM', value: '123103124'),
-                  SizedBox(height: 12),
-                  _CompactFact(label: 'Hobby', value: 'Swimming'),
-                  SizedBox(height: 12),
-                  _CompactFact(label: 'Hometown', value: 'Jakarta Timur'),
-                  SizedBox(height: 12),
-                  _CompactFact(label: 'Others', value: 'Math enthusiast'),
-                  SizedBox(height: 12),
-                  _CompactFact(label: 'Others', value: 'Like to VibeCode'),
-                ],
-              ),
-            ),
-          ),
-          const SizedBox(height: 16),
-          _sectionTitle('Keahlian'),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: _skills.map(_skillChip).toList(),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _portoPage() {
-    return Container(
-      key: const ValueKey('porto'),
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _sectionTitle('Portfolio'),
-          ..._portfolioItems.asMap().entries.map((entry) {
-            final index = entry.key;
-            final item = entry.value;
-            return Padding(
-              padding: EdgeInsets.only(
-                bottom: index == _portfolioItems.length - 1 ? 0 : 12,
-              ),
-              child: _portoCard(item),
-            );
-          }),
-        ],
-      ),
-    );
-  }
-
-  Widget _contactPage() {
-    return Container(
-      key: const ValueKey('contact'),
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _sectionTitle('Hubungi Saya'),
-          Card(
-            elevation: 0,
-            color: Colors.white,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                children: [
-                  _infoRow(Icons.email, 'Email', 'naufal.maulana@students.paramadina.ac.id'),
-                  const Divider(height: 20),
-                  _infoRow(Icons.phone, 'Phone', '081292091767'),
-                  const Divider(height: 20),
-                  _infoRow(Icons.code, 'GitHub', 'github.com/aarz24'),
-                  const Divider(height: 20),
-                  _infoRow(Icons.link, 'LinkedIn', 'linkedin.com/in/naufal-arya-maulana-4a2a31354'),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _sectionTitle(String title) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12, top: 4),
-      child: Text(
-        title,
-        style: const TextStyle(
-          fontSize: 16,
-          fontWeight: FontWeight.bold,
-          color: _textPrimary,
-        ),
-      ),
-    );
-  }
-
-  Widget _infoRow(IconData icon, String label, String value) {
-    return Row(
-      children: [
-        Container(
-          padding: const EdgeInsets.all(8),
+        );
+        final facts = Container(
+          padding: const EdgeInsets.all(30),
           decoration: BoxDecoration(
-            color: const Color(0xFFEAF4FF),
-            borderRadius: BorderRadius.circular(8),
+            color: Palette.ink,
+            borderRadius: BorderRadius.circular(22),
           ),
-          child: Icon(icon, size: 18, color: _primaryDark),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                label,
-                style: const TextStyle(fontSize: 11, color: _textMuted),
+              const Row(
+                children: [
+                  Icon(Icons.fingerprint, color: Palette.water, size: 27),
+                  SizedBox(width: 12),
+                  Flexible(
+                    child: Eyebrow('A little more me', color: Palette.water),
+                  ),
+                ],
               ),
+              const SizedBox(height: 28),
+              _fact('BASED IN', 'Jakarta, Indonesia'),
+              _fact('STUDYING', 'Teknik Informatika · 2023'),
+              _fact('STUDENT ID', '123103124'),
+              _fact('HOMETOWN', 'Jakarta Timur'),
+              const SizedBox(height: 4),
+              const Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  Tag('Swimming', dark: true),
+                  Tag('Math enthusiast', dark: true),
+                  Tag('Vibe coding', dark: true),
+                ],
+              ),
+            ],
+          ),
+        );
+        if (constraints.maxWidth < 720) {
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [story, const SizedBox(height: 34), facts],
+          );
+        }
+        return Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Expanded(flex: 6, child: story),
+            const SizedBox(width: 70),
+            Expanded(flex: 5, child: facts),
+          ],
+        );
+      },
+    ),
+  );
+
+  Widget _fact(String label, String value) => Padding(
+    padding: const EdgeInsets.only(bottom: 23),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: const TextStyle(
+            color: Palette.water,
+            fontSize: 10,
+            letterSpacing: 1.3,
+          ),
+        ),
+        const SizedBox(height: 4),
+        Text(value, style: const TextStyle(color: Palette.white, fontSize: 16)),
+      ],
+    ),
+  );
+
+  Widget _contact() => Padding(
+    key: _contactKey,
+    padding: const EdgeInsets.only(top: 24),
+    child: Container(
+      width: double.infinity,
+      padding: EdgeInsets.all(MediaQuery.sizeOf(context).width < 600 ? 27 : 52),
+      decoration: BoxDecoration(
+        color: Palette.sky,
+        borderRadius: BorderRadius.circular(26),
+      ),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final intro = Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Eyebrow('Good things start with a conversation'),
+              const SizedBox(height: 18),
               Text(
-                value,
-                style: const TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w500,
-                  color: _textPrimary,
+                "Have an idea?\nLet's make it happen.",
+                style: PortfolioTheme.display(
+                  constraints.maxWidth < 600 ? 32 : 43,
+                ),
+              ),
+              const SizedBox(height: 18),
+              const Text(
+                'A project, a collaboration, or just a hello.\n'
+                "I'd love to hear from you.",
+              ),
+              const SizedBox(height: 25),
+              Wrap(
+                spacing: 10,
+                runSpacing: 10,
+                children: [
+                  FilledButton.icon(
+                    onPressed:
+                        () => openContact(context, 'mailto:${Profile.email}'),
+                    label: const Text('Say hello'),
+                    icon: const Icon(Icons.north_east, size: 17),
+                    iconAlignment: IconAlignment.end,
+                  ),
+                  OutlinedButton.icon(
+                    onPressed: () => copyContact(context, Profile.email),
+                    label: const Text('Copy email'),
+                    icon: const Icon(Icons.copy_outlined, size: 16),
+                  ),
+                ],
+              ),
+            ],
+          );
+          final links = Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const Eyebrow('Find me here'),
+              const SizedBox(height: 12),
+              _contactLink('GitHub', '@aarz24', Icons.code, Profile.github),
+              _contactLink(
+                'LinkedIn',
+                'Naufal Arya Maulana',
+                Icons.work_outline_rounded,
+                Profile.linkedIn,
+              ),
+              _contactLink(
+                'Phone',
+                Profile.phone,
+                Icons.call_outlined,
+                'tel:+6281292091767',
+              ),
+              const SizedBox(height: 14),
+              const SelectableText(
+                Profile.email,
+                style: TextStyle(fontSize: 12, color: Palette.muted),
+              ),
+            ],
+          );
+          if (constraints.maxWidth < 730) {
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [intro, const SizedBox(height: 40), links],
+            );
+          }
+          return Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Expanded(flex: 6, child: intro),
+              const SizedBox(width: 54),
+              Expanded(flex: 4, child: links),
+            ],
+          );
+        },
+      ),
+    ),
+  );
+
+  Widget _contactLink(
+    String title,
+    String subtitle,
+    IconData icon,
+    String address,
+  ) => Container(
+    decoration: const BoxDecoration(
+      border: Border(bottom: BorderSide(color: Palette.line)),
+    ),
+    child: ListTile(
+      contentPadding: EdgeInsets.zero,
+      leading: Icon(icon, size: 21, color: Palette.blue),
+      title: Text(
+        title,
+        style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+      ),
+      subtitle: Text(subtitle, style: const TextStyle(fontSize: 12)),
+      trailing: const Icon(Icons.north_east, size: 17, color: Palette.ink),
+      onTap: () => openContact(context, address),
+    ),
+  );
+
+  Widget _footer() => Padding(
+    padding: const EdgeInsets.symmetric(vertical: 34),
+    child: Wrap(
+      alignment: WrapAlignment.spaceBetween,
+      crossAxisAlignment: WrapCrossAlignment.center,
+      spacing: 24,
+      runSpacing: 12,
+      children: [
+        Text(
+          '© ${DateTime.now().year} Naufal Arya Maulana',
+          style: const TextStyle(fontSize: 12),
+        ),
+        const Text(
+          'Made with curiosity & Flutter.',
+          style: TextStyle(fontSize: 12),
+        ),
+        TextButton.icon(
+          onPressed: _goHome,
+          label: const Text('Back to top', style: TextStyle(fontSize: 12)),
+          icon: const Icon(Icons.arrow_upward_rounded, size: 16),
+          iconAlignment: IconAlignment.end,
+        ),
+      ],
+    ),
+  );
+}
+
+class _ProjectCard extends StatefulWidget {
+  const _ProjectCard({super.key, required this.project, required this.onTap});
+  final PortfolioItem project;
+  final VoidCallback onTap;
+
+  @override
+  State<_ProjectCard> createState() => _ProjectCardState();
+}
+
+class _ProjectCardState extends State<_ProjectCard> {
+  bool _hovered = false;
+  bool _focused = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final active = _hovered || _focused;
+    final project = widget.project;
+    return AnimatedContainer(
+      duration: motionDuration(context),
+      transform: Matrix4.translationValues(0, active ? -6 : 0, 0),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(
+          color: active ? Palette.blue : Palette.line,
+          width: 1.5,
+        ),
+        color: Palette.white,
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: Material(
+        color: Palette.white,
+        child: InkWell(
+          onTap: widget.onTap,
+          onHover: (value) => setState(() => _hovered = value),
+          onFocusChange: (value) => setState(() => _focused = value),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Hero(tag: project.kind, child: ProjectArt(project: project)),
+              Padding(
+                padding: const EdgeInsets.all(22),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Eyebrow(project.category, color: project.color),
+                    const SizedBox(height: 13),
+                    ConstrainedBox(
+                      constraints: const BoxConstraints(minHeight: 55),
+                      child: Text(
+                        project.title,
+                        style: PortfolioTheme.display(21),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      project.subtitle,
+                      style: const TextStyle(fontSize: 13),
+                    ),
+                    const SizedBox(height: 21),
+                    Wrap(
+                      spacing: 6,
+                      runSpacing: 6,
+                      children: [
+                        for (final tech in project.tech.take(2)) Tag(tech),
+                        if (project.tech.length > 2)
+                          Tag('+${project.tech.length - 2}'),
+                      ],
+                    ),
+                    const SizedBox(height: 21),
+                    const Divider(height: 1),
+                    const SizedBox(height: 17),
+                    const Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Flexible(
+                          child: Text(
+                            'View project',
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: Palette.ink,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ),
+                        Icon(Icons.north_east, size: 18, color: Palette.ink),
+                      ],
+                    ),
+                  ],
                 ),
               ),
             ],
           ),
         ),
-      ],
-    );
-  }
-
-  Widget _skillChip(String skill) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-      decoration: BoxDecoration(
-        color: const Color(0xFFEAF4FF),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: const Color(0xFFBBD8FF)),
       ),
-      child: Text(
-        skill,
-        style: const TextStyle(
-          fontSize: 13,
-          color: _primaryDark,
-          fontWeight: FontWeight.w500,
-        ),
-      ),
-    );
-  }
-
-  Widget _portoCard(PortfolioItem item) {
-    return Card(
-      elevation: 0,
-      color: Colors.white,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(16),
-        onTap: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => NewForm(
-                title: item.title,
-                description: item.description,
-                tech: item.tech,
-                icon: item.icon,
-              ),
-            ),
-          );
-        },
-        child: ListTile(
-          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          leading: Container(
-            padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(
-              color: const Color(0xFFEAF4FF),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Icon(item.icon, color: _primaryDark),
-          ),
-          title: Text(
-            item.title,
-            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-          ),
-          subtitle: Text(
-            item.tech,
-            style: const TextStyle(fontSize: 12, color: _textMuted),
-          ),
-          trailing: const Icon(Icons.arrow_forward_ios, size: 14, color: Colors.grey),
-        ),
-      ),
-    );
-  }
-}
-
-class _CompactFact extends StatelessWidget {
-  const _CompactFact({required this.label, required this.value});
-
-  final String label;
-  final String value;
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: [
-        SizedBox(
-          width: 86,
-          child: Text(
-            label,
-            style: const TextStyle(
-              fontSize: 12,
-              color: _ProfilPage._textMuted,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Text(
-            value,
-            style: const TextStyle(
-              fontSize: 14,
-              color: _ProfilPage._textPrimary,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ),
-      ],
     );
   }
 }

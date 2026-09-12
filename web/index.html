@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
   <!--
     If you are serving your web app in a path other than the root, change the
@@ -18,19 +18,47 @@
 
   <meta charset="UTF-8">
   <meta content="IE=Edge" http-equiv="X-UA-Compatible">
-  <meta name="description" content="A new Flutter project.">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#F8FAFC">
+  <meta name="description" content="Naufal Arya Maulana — an informatics student in Jakarta exploring web development, connected devices, and games. Explore my work and get in touch.">
+  <meta property="og:title" content="Arya — Curiosity into code">
+  <meta property="og:description" content="Turning curiosity into things that work. A personal portfolio by Naufal Arya Maulana.">
+  <meta property="og:type" content="website">
 
   <!-- iOS meta tags & icons -->
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black">
-  <meta name="apple-mobile-web-app-title" content="praktikum">
+  <meta name="apple-mobile-web-app-title" content="Arya">
   <link rel="apple-touch-icon" href="icons/Icon-192.png">
 
   <!-- Favicon -->
   <link rel="icon" type="image/png" href="favicon.png"/>
 
-  <title>praktikum</title>
+  <title>Arya — Curiosity into code</title>
   <link rel="manifest" href="manifest.json">
+  <style>
+    html, body { margin: 0; background: #F8FAFC; color: #142B42; }
+    #loading {
+      position: fixed; inset: 0; display: grid; place-content: center;
+      gap: 18px; text-align: center; padding: 24px;
+      font: 15px/1.6 system-ui, sans-serif;
+    }
+    #loading img { width: 56px; height: 56px; margin: 0 auto; border-radius: 16px; }
+    #loading p { margin: 0; }
+    #loading a { color: #246BCE; }
+    #loading button {
+      border: 0; border-radius: 10px; padding: 12px 24px;
+      background: #246BCE; color: #fff; font: inherit; cursor: pointer;
+    }
+    #loading button:focus-visible { outline: 3px solid #142B42; outline-offset: 4px; }
+    .progress { width: 120px; height: 3px; margin: 0 auto; background: #DFE6ED; overflow: hidden; }
+    .progress::after {
+      content: ''; display: block; width: 45%; height: 100%; background: #246BCE;
+      animation: loading 1.2s ease-in-out infinite alternate;
+    }
+    @keyframes loading { to { transform: translateX(125%); } }
+    @media (prefers-reduced-motion: reduce) { .progress::after { animation: none; } }
+  </style>
 </head>
 <body>
   <!--
@@ -41,6 +69,28 @@
     For more details:
     * https://docs.flutter.dev/platform-integration/web/initialization
   -->
-  <script src="flutter_bootstrap.js" async></script>
+  <div id="loading" role="status" aria-live="polite">
+    <img src="icons/Icon-192.png" alt="">
+    <p id="loading-message">A little curiosity is loading.<br>Naufal Arya Maulana · Portfolio</p>
+    <div class="progress" aria-hidden="true"></div>
+    <button id="retry" hidden onclick="location.reload()">Try again</button>
+    <noscript>
+      <p>This interactive portfolio needs JavaScript.</p>
+      <p>Explore web, IoT, and game projects by Naufal Arya Maulana.</p>
+      <a href="mailto:naufal.maulana@students.paramadina.ac.id">Get in touch by email</a>
+    </noscript>
+  </div>
+  <script>
+    window.addEventListener('flutter-first-frame', function () {
+      document.getElementById('loading')?.remove();
+    });
+    function showLoadError() {
+      document.getElementById('loading-message').textContent =
+        'The portfolio could not load. Check your connection and try again.';
+      document.querySelector('.progress').hidden = true;
+      document.getElementById('retry').hidden = false;
+    }
+  </script>
+  <script src="flutter_bootstrap.js" async onerror="showLoadError()"></script>
 </body>
 </html>

@@ -1,10 +1,11 @@
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:praktikum/main.dart';
 
 void main() {
-  testWidgets('Portfolio app shows profile content', (WidgetTester tester) async {
+  testWidgets('Portfolio app shows profile content', (
+    WidgetTester tester,
+  ) async {
     await tester.pumpWidget(const MyApp());
     await tester.pumpAndSettle();
 
