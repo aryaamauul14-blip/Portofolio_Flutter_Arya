@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:praktikum/portfolio_theme.dart';
 import 'package:praktikum/profil_page.dart';
 
 void main() {
@@ -11,11 +12,10 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Pemograman Mobile & Web',
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.red),
-      ),
-      home: ProfilPage(),
+      debugShowCheckedModeBanner: false,
+      title: 'Arya — Curiosity into code',
+      theme: PortfolioTheme.light,
+      home: const ProfilPage(),
     );
   }
 }

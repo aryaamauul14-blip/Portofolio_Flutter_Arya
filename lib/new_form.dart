@@ -1,113 +1,175 @@
 import 'package:flutter/material.dart';
 
+import 'portfolio_data.dart';
+import 'portfolio_theme.dart';
+import 'portfolio_widgets.dart';
+import 'project_art.dart';
+
 class NewForm extends StatelessWidget {
-  const NewForm({
-    super.key,
-    required this.title,
-    required this.description,
-    required this.tech,
-    required this.icon,
-  });
+  const NewForm({super.key, required this.project});
 
-  final String title;
-  final String description;
-  final String tech;
-  final IconData icon;
-
-  static const Color _primary = Color(0xFF5AA9FF);
-  static const Color _primaryDark = Color(0xFF2D7FE8);
-  static const Color _surface = Color(0xFFF8FBFF);
-  static const Color _textPrimary = Color(0xFF17324D);
-  static const Color _textMuted = Color(0xFF6B86A5);
+  final PortfolioItem project;
 
   @override
   Widget build(BuildContext context) {
+    final compact = MediaQuery.sizeOf(context).width < 700;
     return Scaffold(
-      backgroundColor: _surface,
       appBar: AppBar(
-        backgroundColor: _primaryDark,
-        foregroundColor: Colors.white,
-        title: const Text('Portfolio Detail'),
+        title: Text('Project overview', style: PortfolioTheme.display(17)),
+        backgroundColor: Palette.paper,
+        surfaceTintColor: Palette.paper,
+        centerTitle: true,
+        leading: IconButton(
+          tooltip: 'Back to portfolio',
+          onPressed: () => Navigator.pop(context),
+          icon: const Icon(Icons.arrow_back_rounded),
+        ),
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Hero(
-              tag: title,
-              child: Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [_primary, _primaryDark],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                  borderRadius: BorderRadius.circular(24),
-                ),
+      body: SafeArea(
+        child: SingleChildScrollView(
+          child: ContentWidth(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 36),
+              child: SelectionArea(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Icon(icon, color: Colors.white, size: 40),
-                    const SizedBox(height: 16),
+                    Eyebrow(project.category, color: project.color),
+                    const SizedBox(height: 14),
                     Text(
-                      title,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
+                      project.title,
+                      style: PortfolioTheme.display(compact ? 36 : 54),
+                    ),
+                    const SizedBox(height: 15),
+                    Text(
+                      project.subtitle,
+                      style: const TextStyle(fontSize: 18),
+                    ),
+                    const SizedBox(height: 32),
+                    Hero(
+                      tag: project.kind,
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(22),
+                        child: ProjectArt(project: project),
                       ),
                     ),
-                    const SizedBox(height: 8),
-                    Text(
-                      tech,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 14,
-                        fontWeight: FontWeight.w500,
-                      ),
+                    const SizedBox(height: 10),
+                    const Text(
+                      'Original concept illustration · A visual interpretation of the project',
+                      style: TextStyle(fontSize: 11, color: Palette.muted),
                     ),
+                    const SizedBox(height: 42),
+                    LayoutBuilder(
+                      builder: (context, constraints) {
+                        final overview = Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              project.focus,
+                              style: PortfolioTheme.display(28),
+                            ),
+                            const SizedBox(height: 20),
+                            Text(project.description),
+                            const SizedBox(height: 25),
+                            for (final feature in project.features)
+                              Padding(
+                                padding: const EdgeInsets.only(bottom: 13),
+                                child: Row(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    const Padding(
+                                      padding: EdgeInsets.only(top: 5),
+                                      child: Icon(
+                                        Icons.arrow_right_alt,
+                                        size: 20,
+                                        color: Palette.blue,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 12),
+                                    Expanded(child: Text(feature)),
+                                  ],
+                                ),
+                              ),
+                          ],
+                        );
+                        final toolkit = Container(
+                          padding: const EdgeInsets.all(26),
+                          decoration: BoxDecoration(
+                            color: Palette.sky,
+                            borderRadius: BorderRadius.circular(18),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Eyebrow('Built with'),
+                              const SizedBox(height: 20),
+                              Wrap(
+                                spacing: 8,
+                                runSpacing: 10,
+                                children: [
+                                  for (final tech in project.tech) Tag(tech),
+                                ],
+                              ),
+                              const SizedBox(height: 28),
+                              const Text(
+                                'Curious about this project?',
+                                style: TextStyle(
+                                  color: Palette.ink,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                              const SizedBox(height: 12),
+                              FilledButton.icon(
+                                onPressed:
+                                    () => openContact(
+                                      context,
+                                      Uri(
+                                        scheme: 'mailto',
+                                        path: Profile.email,
+                                        query:
+                                            'subject=${Uri.encodeComponent('Let’s talk about ${project.title}')}',
+                                      ).toString(),
+                                    ),
+                                label: const Text("Let's talk"),
+                                icon: const Icon(Icons.north_east, size: 16),
+                              ),
+                            ],
+                          ),
+                        );
+                        if (constraints.maxWidth < 700) {
+                          return Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              overview,
+                              const SizedBox(height: 28),
+                              toolkit,
+                            ],
+                          );
+                        }
+                        return Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Expanded(flex: 6, child: overview),
+                            const SizedBox(width: 60),
+                            Expanded(flex: 4, child: toolkit),
+                          ],
+                        );
+                      },
+                    ),
+                    const SizedBox(height: 45),
+                    const Divider(),
+                    const SizedBox(height: 20),
+                    OutlinedButton.icon(
+                      onPressed: () => Navigator.pop(context),
+                      icon: const Icon(Icons.arrow_back, size: 17),
+                      label: const Text('Back to all projects'),
+                    ),
+                    const SizedBox(height: 24),
                   ],
                 ),
               ),
             ),
-            const SizedBox(height: 20),
-            const Text(
-              'Description',
-              style: TextStyle(
-                color: _textPrimary,
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 10),
-            Text(
-              description,
-              style: const TextStyle(
-                color: _textMuted,
-                fontSize: 14,
-                height: 1.5,
-              ),
-            ),
-            const Spacer(),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: () => Navigator.pop(context),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: _primaryDark,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                ),
-                child: const Text('Back to Profile'),
-              ),
-            ),
-          ],
+          ),
         ),
       ),
     );
